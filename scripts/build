@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -eu
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASE_DIR="$(dirname "${SCRIPTS_DIR}")"
+SOURCE_DIR="${BASE_DIR}/src"
+OUTPUT_DIR="${BASE_DIR}/lib"
+
+compile_commonjs() {
+  mkdir -vp "${OUTPUT_DIR}"
+
+  babel \
+    --delete-dir-on-start \
+    --out-dir "${OUTPUT_DIR}/cjs" \
+    --minified \
+    --compact true \
+    --no-comments \
+    --no-highlight-code \
+    --env-name production \
+    --source-root "${SOURCE_DIR}" \
+    --out-file-extension .js \
+    '**/index.mjs'
+
+  > "${OUTPUT_DIR}/cjs/package.json" cat <<EOF
+{
+  "type": "commonjs"
+}
+EOF
+}
+
+compile_module() {
+  mkdir -vp "${OUTPUT_DIR}"
+
+  rm -vfR "${OUTPUT_DIR}/esm"
+
+  cp -vfR "${SOURCE_DIR}" "${OUTPUT_DIR}/esm"
+
+  > "${OUTPUT_DIR}/esm/package.json" cat <<EOF
+{
+  "type": "module"
+}
+EOF
+}
+
+compile() {
+  compile_commonjs "$@"
+  compile_module "$@"
+}
+
+compile "$@"

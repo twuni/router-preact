@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en_US">
+  <head>
+    <meta charset="UTF-8"/>
+    <script async src="/node_modules/es-module-shims/dist/es-module-shims.js"></script>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "htm": "./node_modules/htm/dist/htm.mjs",
+          "htm/preact": "./node_modules/htm/preact/index.mjs",
+          "preact": "./node_modules/preact/dist/preact.mjs",
+          "preact/hooks": "./node_modules/preact/hooks/dist/hooks.mjs"
+        }
+      }
+    </script>
+    <script type="module">
+      import { Link, Route, onNavigate, navigate, pattern } from './src/index.mjs';
+      import { useEffect, useState } from 'preact/hooks';
+
+      import { html } from 'htm/preact';
+      import { render } from 'preact';
+
+      const restoreClicks = () => Number(new URL(location).searchParams.get('clicks') || '0');
+
+      const Clicker = ({ children }) => {
+        const [clicks, setClicks] = useState(restoreClicks());
+
+        useEffect(onNavigate(() => {
+          const nextClicks = restoreClicks();
+
+          if (clicks !== nextClicks) {
+            setClicks(nextClicks);
+          }
+        }), [clicks]);
+
+        return html`
+          <${Link} to="/demo.html?clicks=${clicks + 1}">${children}<//>
+        `;
+      };
+
+      render(html`
+        <${Route} path=${pattern`/${'file'}.html`} render=${({ params: { file }, query: { clicks = '0' } }) => html`
+          <p>I am the <b>${file}<//> file and the clicker has been clicked <b>${clicks}<//> ${clicks === '1' ? 'time' : 'times'}.<//>
+        `}/>
+        <${Route} path="/demo.html">
+          <p>
+            <${Clicker}>Click me! I'm the clicker!<//>
+          <//>
+          <p>
+            <button onClick=${() => navigate('/demo.html')}>Reset the clicker<//>
+          <//>
+        <//>
+      `, document.body);
+    </script>
+  </body>
+</html>
