@@ -13,6 +13,13 @@ export const BrowserRouter = function BrowserRouter() {
   };
 
   Object.assign(this, {
+    match: (path) => {
+      if (typeof path === 'string') {
+        return location.pathname === path ? {} : undefined;
+      }
+
+      return path(location.pathname);
+    },
     navigate(path) {
       history.pushState({}, '', path);
       notifyCallbacks();
@@ -55,73 +62,25 @@ export const onNavigate = browserRouter.onNavigate;
 
 export const Router = createContext(browserRouter);
 
-export const pattern = (templateParts, ...parameterNames) => (path) => {
-  const readable = templateParts.map((it, index) => `${it}${parameterNames[index] ? `{${parameterNames[index]}}` : ''}`).join('');
-  const parameters = {};
-  let remaining = path;
-  let offset = 0;
+export const pattern = (templateParts, ...parameterNames) => function matches(path) {
+  const [_, ...parameterValues] = new RegExp(templateParts.join('(.+)'), 'g').exec(path);
 
-  while (offset < templateParts.length) {
-    const part = templateParts[offset];
-    const name = parameterNames[offset];
-
-    offset += 1;
-
-    if (remaining && !part) {
-      throw new Error(`${path} does not match pattern: ${readable}`);
-    }
-
-    if (!remaining.startsWith(part)) {
-      throw new Error(`${path} does not match pattern: ${readable}`);
-    }
-
-    remaining = remaining.substring(part.length);
-
-    if (name) {
-      const nextSlash = remaining.indexOf('/');
-
-      if (nextSlash < 0) {
-        const nextDot = remaining.indexOf('.');
-        if (nextDot < 0) {
-          parameters[name] = remaining;
-          remaining = '';
-        } else {
-          parameters[name] = remaining.substring(0, nextDot);
-          remaining = remaining.substring(nextDot);
-        }
-      } else {
-        parameters[name] = remaining.substring(0, nextSlash);
-        remaining = remaining.substring(nextSlash);
-      }
-    }
+  if (parameterValues.length !== parameterNames.length) {
+    return undefined;
   }
 
-  return parameters;
-};
-
-const butIsItReallyActiveTho = (router, path) => {
-  if (typeof path === 'function') {
-    try {
-      path(router.path());
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  if (router.path() === path) {
-    return true;
-  }
-
-  return false;
+  return parameterNames.reduce((a, b, index) => {
+    a[b] = parameterValues[index];
+    return a;
+  }, {});
 };
 
 export const Link = (props) => {
   const router = useContext(Router);
-  const [isActive, setActive] = useState(butIsItReallyActiveTho(router, props.to));
+  const [isActive, setActive] = useState(Boolean(router.match(props.to)));
 
   useEffect(onNavigate(() => {
-    const willBeActive = butIsItReallyActiveTho(router, props.to);
+    const willBeActive = Boolean(router.match(props.to));
 
     if (willBeActive !== isActive) {
       setActive(willBeActive);
@@ -142,14 +101,14 @@ export const Link = (props) => {
 
 export const Route = ({ children, path = '/', render }) => {
   const router = useContext(Router);
-  const [isActive, setActive] = useState(butIsItReallyActiveTho(router, path));
+  const [params, setParams] = useState(router.match(path));
   const [query, setQuery] = useState(router.query());
 
   useEffect(onNavigate(() => {
-    const willBeActive = butIsItReallyActiveTho(router, path);
+    const nextParams = router.match(path);
 
-    if (willBeActive !== isActive) {
-      setActive(willBeActive);
+    if (JSON.stringify(params) !== JSON.stringify(nextParams)) {
+      setParams(nextParams);
     }
 
     const nextQuery = router.query();
@@ -157,15 +116,11 @@ export const Route = ({ children, path = '/', render }) => {
     if (JSON.stringify(nextQuery) !== JSON.stringify(query)) {
       setQuery(nextQuery);
     }
-  }), [router, path, query]);
+  }), [router, params, path, query]);
 
-  if (isActive) {
+  if (params) {
     if (typeof render === 'function') {
-      return render({
-        params: typeof path === 'function' ? path(router.path()) : {},
-        path: router.path(),
-        query: router.query()
-      });
+      return render({ params, path: router.path(), query });
     }
 
     return children;
