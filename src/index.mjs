@@ -3,11 +3,55 @@ import { useContext, useEffect, useState } from 'preact/hooks';
 import { createContext } from 'preact';
 import { html } from 'htm/preact';
 
-export const browserRouter = Object.freeze({
-  addEventListener,
-  history,
-  location
-});
+export const BrowserRouter = function BrowserRouter() {
+  const callbacks = [];
+
+  const notifyCallbacks = () => {
+    for (const callback of callbacks) {
+      callback(location.pathname);
+    }
+  };
+
+  Object.assign(this, {
+    navigate(path) {
+      history.pushState({}, '', path);
+      notifyCallbacks();
+    },
+    onNavigate: (callback) => () => {
+      callbacks.push(callback);
+
+      return () => {
+        const index = callbacks.indexOf(callback);
+
+        if (index >= 0) {
+          callbacks.splice(index, 1);
+        }
+      };
+    },
+    path: () => location.pathname,
+    query() {
+      const query = {};
+
+      for (const [key, value] of new URL(location).searchParams) {
+        query[key] = value;
+      }
+
+      return query;
+    }
+  });
+
+  addEventListener('popstate', () => {
+    notifyCallbacks();
+  });
+
+  return this;
+};
+
+export const browserRouter = new BrowserRouter();
+
+export const navigate = browserRouter.navigate;
+
+export const onNavigate = browserRouter.onNavigate;
 
 export const Router = createContext(browserRouter);
 
@@ -55,64 +99,21 @@ export const pattern = (templateParts, ...parameterNames) => (path) => {
   return parameters;
 };
 
-const state = {
-  callbacks: []
-};
-
-const notifyCallbacks = () => {
-  for (const callback of state.callbacks) {
-    callback(browserRouter.location.pathname);
-  }
-};
-
-(({ addEventListener }) => {
-  addEventListener('popstate', () => {
-    notifyCallbacks();
-  });
-})(browserRouter);
-
-export const navigate = (path) => {
-  browserRouter.history.pushState({}, '', path);
-  notifyCallbacks();
-};
-
-export const onNavigate = (callback) => () => {
-  state.callbacks.push(callback);
-
-  return () => {
-    const index = state.callbacks.indexOf(callback);
-
-    if (index >= 0) {
-      state.callbacks.splice(index, 1);
-    }
-  };
-};
-
 const butIsItReallyActiveTho = (router, path) => {
   if (typeof path === 'function') {
     try {
-      path(router.location.pathname);
+      path(router.path());
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  if (router.location.pathname === path) {
+  if (router.path() === path) {
     return true;
   }
 
   return false;
-};
-
-const getQuery = (router) => {
-  const query = {};
-
-  for (const [key, value] of new URL(router.location).searchParams) {
-    query[key] = value;
-  }
-
-  return query;
 };
 
 export const Link = (props) => {
@@ -142,7 +143,7 @@ export const Link = (props) => {
 export const Route = ({ children, path = '/', render }) => {
   const router = useContext(Router);
   const [isActive, setActive] = useState(butIsItReallyActiveTho(router, path));
-  const [query, setQuery] = useState(getQuery(router));
+  const [query, setQuery] = useState(router.query());
 
   useEffect(onNavigate(() => {
     const willBeActive = butIsItReallyActiveTho(router, path);
@@ -151,7 +152,7 @@ export const Route = ({ children, path = '/', render }) => {
       setActive(willBeActive);
     }
 
-    const nextQuery = getQuery(router);
+    const nextQuery = router.query();
 
     if (JSON.stringify(nextQuery) !== JSON.stringify(query)) {
       setQuery(nextQuery);
@@ -161,9 +162,9 @@ export const Route = ({ children, path = '/', render }) => {
   if (isActive) {
     if (typeof render === 'function') {
       return render({
-        params: typeof path === 'function' ? path(router.location.pathname) : {},
-        path: router.location.pathname,
-        query: getQuery(router)
+        params: typeof path === 'function' ? path(router.path()) : {},
+        path: router.path(),
+        query: router.query()
       });
     }
 
