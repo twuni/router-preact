@@ -1,6 +1,15 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useState } from 'preact/hooks';
 
+import { createContext } from 'preact';
 import { html } from 'htm/preact';
+
+export const browserRouter = Object.freeze({
+  addEventListener,
+  history,
+  location
+});
+
+export const Router = createContext(browserRouter);
 
 export const pattern = (templateParts, ...parameterNames) => (path) => {
   const readable = templateParts.map((it, index) => `${it}${parameterNames[index] ? `{${parameterNames[index]}}` : ''}`).join('');
@@ -52,16 +61,18 @@ const state = {
 
 const notifyCallbacks = () => {
   for (const callback of state.callbacks) {
-    callback(location.pathname);
+    callback(browserRouter.location.pathname);
   }
 };
 
-addEventListener('popstate', () => {
-  notifyCallbacks();
-});
+(({ addEventListener }) => {
+  addEventListener('popstate', () => {
+    notifyCallbacks();
+  });
+})(browserRouter);
 
 export const navigate = (path) => {
-  history.pushState({}, '', path);
+  browserRouter.history.pushState({}, '', path);
   notifyCallbacks();
 };
 
@@ -77,27 +88,27 @@ export const onNavigate = (callback) => () => {
   };
 };
 
-const butIsItReallyActiveTho = (path) => {
+const butIsItReallyActiveTho = (router, path) => {
   if (typeof path === 'function') {
     try {
-      path(location.pathname);
+      path(router.location.pathname);
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  if (location.pathname === path) {
+  if (router.location.pathname === path) {
     return true;
   }
 
   return false;
 };
 
-const getQuery = () => {
+const getQuery = (router) => {
   const query = {};
 
-  for (const [key, value] of new URL(location).searchParams) {
+  for (const [key, value] of new URL(router.location).searchParams) {
     query[key] = value;
   }
 
@@ -105,15 +116,16 @@ const getQuery = () => {
 };
 
 export const Link = (props) => {
-  const [isActive, setActive] = useState(butIsItReallyActiveTho(props.to));
+  const router = useContext(Router);
+  const [isActive, setActive] = useState(butIsItReallyActiveTho(router, props.to));
 
   useEffect(onNavigate(() => {
-    const willBeActive = butIsItReallyActiveTho(props.to);
+    const willBeActive = butIsItReallyActiveTho(router, props.to);
 
     if (willBeActive !== isActive) {
       setActive(willBeActive);
     }
-  }), [props.to]);
+  }), [router, props.to]);
 
   const onClick = (event) => {
     event.preventDefault();
@@ -128,29 +140,30 @@ export const Link = (props) => {
 };
 
 export const Route = ({ children, path = '/', render }) => {
-  const [isActive, setActive] = useState(butIsItReallyActiveTho(path));
-  const [query, setQuery] = useState(getQuery());
+  const router = useContext(Router);
+  const [isActive, setActive] = useState(butIsItReallyActiveTho(router, path));
+  const [query, setQuery] = useState(getQuery(router));
 
   useEffect(onNavigate(() => {
-    const willBeActive = butIsItReallyActiveTho(path);
+    const willBeActive = butIsItReallyActiveTho(router, path);
 
     if (willBeActive !== isActive) {
       setActive(willBeActive);
     }
 
-    const nextQuery = getQuery();
+    const nextQuery = getQuery(router);
 
     if (JSON.stringify(nextQuery) !== JSON.stringify(query)) {
       setQuery(nextQuery);
     }
-  }), [path, query]);
+  }), [router, path, query]);
 
   if (isActive) {
     if (typeof render === 'function') {
       return render({
-        params: typeof path === 'function' ? path(location.pathname) : {},
-        path: location.pathname,
-        query: getQuery()
+        params: typeof path === 'function' ? path(router.location.pathname) : {},
+        path: router.location.pathname,
+        query: getQuery(router)
       });
     }
 
