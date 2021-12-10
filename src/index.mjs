@@ -66,8 +66,14 @@ export const onNavigate = browserRouter.onNavigate;
 
 export const Router = createContext(browserRouter);
 
-export const pattern = (templateParts, ...parameterNames) => function matches(path) {
-  const [_, ...parameterValues] = new RegExp(templateParts.join('(.+)'), 'g').exec(path);
+export const pattern = (templateParts, ...parameterNames) => function patternMatches(path) {
+  const matchResult = new RegExp(templateParts.join('(.+)'), 'g').exec(path);
+
+  if (!matchResult) {
+    return undefined;
+  }
+
+  const parameterValues = matchResult.slice(1);
 
   if (parameterValues.length !== parameterNames.length) {
     return undefined;
