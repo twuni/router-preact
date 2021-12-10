@@ -20,10 +20,12 @@ export const BrowserRouter = function BrowserRouter() {
 
       return path(location.pathname);
     },
+
     navigate(path) {
       history.pushState({}, '', path);
       notifyCallbacks();
     },
+
     onNavigate: (callback) => () => {
       callbacks.push(callback);
 
@@ -35,7 +37,9 @@ export const BrowserRouter = function BrowserRouter() {
         }
       };
     },
+
     path: () => location.pathname,
+
     query() {
       const query = {};
 
@@ -99,6 +103,8 @@ export const Link = (props) => {
   return html`<a ...${childProps} href=${props.to} onClick=${onClick}/>`;
 };
 
+const shallowEquals = (a, b) => Object.keys(a).concat(Object.keys(b)).every((key) => a[key] === b[key]);
+
 export const Route = ({ children, path = '/', render }) => {
   const router = useContext(Router);
   const [params, setParams] = useState(router.match(path));
@@ -107,13 +113,13 @@ export const Route = ({ children, path = '/', render }) => {
   useEffect(onNavigate(() => {
     const nextParams = router.match(path);
 
-    if (JSON.stringify(params) !== JSON.stringify(nextParams)) {
+    if (!shallowEquals(params, nextParams)) {
       setParams(nextParams);
     }
 
     const nextQuery = router.query();
 
-    if (JSON.stringify(nextQuery) !== JSON.stringify(query)) {
+    if (!shallowEquals(query, nextQuery)) {
       setQuery(nextQuery);
     }
   }), [router, params, path, query]);
