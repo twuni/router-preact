@@ -4,7 +4,12 @@ A tiny router for Preact apps. It connects your app with the address bar. That's
 
 ## Features
 
- * Tiny footprint, minimal dependencies. Less than 2KB, + Preact and HTM.
+ * Tiny footprint (less than 1KB gzipped!)
+ * No dependencies (BYO Preact/HTM)
+ * Comprehensive test suite (100% code coverage)
+ * Suitable for production use
+ * MIT license
+ * Browser-native ESM friendly (designed specifically to require zero build tools to run)
 
 ## Installing
 
@@ -16,26 +21,71 @@ Yarn users, you know what to do instead.
 
 ## Usage
 
-```javascript
+The following examples are written in JSX format, for brevity.
+
+### Example: Basic Usage
+
+```jsx
+import { Link, Route } from 'router-preact';
+
+const App = () => <>
+  <Route path="/">
+    <Link to="/next">Next page</Link>
+  </Route>
+
+  <Route path="/next">
+    <Link to="/">First page</Link>
+  </Route>
+</>;
+```
+
+### Example: Parameterized Routes
+
+```jsx
 import { Link, Route, pattern } from 'router-preact';
 
-import { html } from 'htm/preact';
-import { render } from 'preact';
+const App = () => <>
+  <Route path="/">
+    <Link to="/pages/1">Go to page 1</Link>
+  </Route>
 
-render(html`
-  <${Route} path="/" render=${() => html`
-    <p>
-      <${Link} to="/houses/mine">Go to my house<//>
-    <//>
-    <p>
-      <${Link} to="/houses/yours">Go to your house<//>
-    <//>
-  `}/>
-  <${Route} path=${pattern`/houses/${'whose'}`} render=${({ params: { whose } }) => html`
-    <p>This house is ${whose}.<//>
-    <p>
-      <${Link} to=${`/houses/${whose === 'mine' ? 'yours' : 'mine'}`}>Go to the other house<//>
-    <//>
-  `}/>
-`, document.body);
+  <Route path={pattern`/pages/${'pageNumber'}`} render={({ params: { pageNumber } }) => <>
+    <p>Thank you for visiting page {pageNumber}.</p>
+    <Link to={`/pages/${pageNumber + 1}`}>Go to next page</Link>
+  </>}/>
+</>;
+```
+
+### Advanced Example: Intercepting the Router
+
+If you really want to, you can swap out the router implementation by
+using the `Router` *context* provided by this package. For example, if
+you want to test a component that involves routing.
+
+```jsx
+import { Router } from 'router-preact';
+
+const myRouter = {
+  match(path) {
+    // If the given path matches the currently active route, then return an object with key-value pairs for each path parameter
+    // Otherwise, return `undefined`
+  },
+  navigate(path) {
+    // Transition the currently active route to the given path and notify any callbacks registered via onNavigate() of the new path
+  },
+  onNavigate: (callback) => () => {
+    // Register the callback so that it gets notified when the active route changes
+    // Return a function that, when called, will deregister the callback
+  },
+  path() {
+    // Return the path of the currently active route
+  },
+  query() {
+    // Return the query parameters of the currently active route as an object
+  }
+};
+
+const App = () => <Router.Provider value={myRouter}>
+  ...
+</>;
 ```
