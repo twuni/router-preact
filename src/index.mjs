@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'preact/hooks';
 import { createContext } from 'preact';
 import { html } from 'htm/preact';
 
-export const BrowserRouter = function BrowserRouter() {
+export const BrowserRouter = function BrowserRouter({ addEventListener, history, location }) {
   const callbacks = [];
 
   const notifyCallbacks = () => {
@@ -43,7 +43,7 @@ export const BrowserRouter = function BrowserRouter() {
     query() {
       const query = {};
 
-      for (const [key, value] of new URL(location).searchParams) {
+      for (const [key, value] of new URL(location.href).searchParams) {
         query[key] = value;
       }
 
@@ -58,7 +58,7 @@ export const BrowserRouter = function BrowserRouter() {
   return this;
 };
 
-export const browserRouter = new BrowserRouter();
+export const browserRouter = new BrowserRouter(window);
 
 export const navigate = browserRouter.navigate;
 
@@ -67,17 +67,13 @@ export const onNavigate = browserRouter.onNavigate;
 export const Router = createContext(browserRouter);
 
 export const pattern = (templateParts, ...parameterNames) => function patternMatches(path) {
-  const matchResult = new RegExp(templateParts.join('(.+)'), 'g').exec(path);
+  const matchResult = new RegExp(`^${templateParts.join('([^/]+)')}$`, 'g').exec(path);
 
   if (!matchResult) {
     return undefined;
   }
 
   const parameterValues = matchResult.slice(1);
-
-  if (parameterValues.length !== parameterNames.length) {
-    return undefined;
-  }
 
   return parameterNames.reduce((a, b, index) => {
     a[b] = parameterValues[index];
@@ -89,7 +85,7 @@ export const Link = (props) => {
   const router = useContext(Router);
   const [isActive, setActive] = useState(Boolean(router.match(props.to)));
 
-  useEffect(onNavigate(() => {
+  useEffect(router.onNavigate(() => {
     const willBeActive = Boolean(router.match(props.to));
 
     if (willBeActive !== isActive) {
@@ -97,9 +93,15 @@ export const Link = (props) => {
     }
   }), [router, props.to]);
 
+  useEffect(() => {
+    if (props.onActiveChange) {
+      props.onActiveChange(isActive);
+    }
+  }, [isActive, props.onActiveChange]);
+
   const onClick = (event) => {
     event.preventDefault();
-    navigate(props.to);
+    router.navigate(props.to);
   };
 
   const childProps = { ...props };
@@ -109,14 +111,14 @@ export const Link = (props) => {
   return html`<a ...${childProps} href=${props.to} onClick=${onClick}/>`;
 };
 
-const shallowEquals = (a, b) => Object.keys(a).concat(Object.keys(b)).every((key) => a[key] === b[key]);
+const shallowEquals = (a, b) => Boolean(a) === Boolean(b) && (!(a && b) || Object.keys(a).concat(Object.keys(b)).every((key) => a[key] === b[key]));
 
 export const Route = ({ children, path = '/', render }) => {
   const router = useContext(Router);
   const [params, setParams] = useState(router.match(path));
   const [query, setQuery] = useState(router.query());
 
-  useEffect(onNavigate(() => {
+  useEffect(router.onNavigate(() => {
     const nextParams = router.match(path);
 
     if (!shallowEquals(params, nextParams)) {

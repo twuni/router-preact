@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -eu
+
+exec c8 --check-coverage --branches 100 --functions 100 --include '**/index.mjs' --lines 100 --statements 100 mocha --exclude '**/index.mjs' --recursive --require src/spec.setup.mjs src
