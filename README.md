@@ -1,5 +1,12 @@
 # 📡 Router | Preact
 
+![Code Coverage by Test Suite][coverage]
+![License][license]
+[![Bundle Size][footprint]][bundlephobia]
+[![Current Release Version][version]][npm]
+![Weekly Downloads][downloads]
+[![Sponsors][sponsors]][become-a-sponsor]
+
 A tiny router for Preact apps. It connects your app with the address bar. That's it.
 
 ## Features
@@ -89,3 +96,13 @@ const App = () => <Router.Provider value={myRouter}>
   ...
 </>;
 ```
+
+[coverage]: https://img.shields.io/badge/coverage-100%25-success
+[license]: https://img.shields.io/npm/l/router-preact
+[footprint]: https://img.shields.io/bundlephobia/minzip/router-preact
+[version]: https://img.shields.io/npm/v/router-preact
+[downloads]: https://img.shields.io/npm/dw/router-preact
+[sponsors]: https://img.shields.io/github/sponsors/canterberry
+[become-a-sponsor]: https://github.com/sponsors/canterberry
+[npm]: https://npmjs.com/package/router-preact
+[bundlephobia]: https://bundlephobia.com/package/router-preact
