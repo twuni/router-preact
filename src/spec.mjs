@@ -53,7 +53,8 @@ describe('<Link>', () => {
     describe('when link is inactive', () => {
       it('is initialized to false', async () => {
         const onActiveChange = fake();
-        mount(html`<${Link} onActiveChange=${onActiveChange} to="/mordor">Children<//>`, { window: mockWindow({ location: mockLocation({ pathname: '/the-shire' }) }) });
+        const window = mockWindow({ location: mockLocation({ pathname: '/the-shire' }) });
+        mount(html`<${Link} onActiveChange=${onActiveChange} to="/mordor">Children<//>`, { window });
         await waitFor(() => onActiveChange.callCount > 0);
         expect(onActiveChange).to.have.been.calledWith(false);
       });
@@ -61,7 +62,8 @@ describe('<Link>', () => {
       describe('when link transitions to active', () => {
         it('is called again with true', async () => {
           const onActiveChange = fake();
-          const { router } = mount(html`<${Link} onActiveChange=${onActiveChange} to="/mordor">Children<//>`, { window: mockWindow({ location: mockLocation({ pathname: '/the-shire' }) }) });
+          const window = mockWindow({ location: mockLocation({ pathname: '/the-shire' }) });
+          const { router } = mount(html`<${Link} onActiveChange=${onActiveChange} to="/mordor">Children<//>`, { window });
           await waitFor(() => onActiveChange.callCount > 0);
           router.navigate('/mordor');
           await waitFor(() => onActiveChange.callCount > 1);
@@ -73,15 +75,8 @@ describe('<Link>', () => {
     describe('when link is active', () => {
       it('is initialized to true', async () => {
         const onActiveChange = fake();
-        mount(html`
-          <${Link} onActiveChange=${onActiveChange} to="/the-shire">Children<//>
-        `, {
-          window: mockWindow({
-            location: mockLocation({
-              pathname: '/the-shire'
-            })
-          })
-        });
+        const window = mockWindow({ location: mockLocation({ pathname: '/the-shire' }) });
+        mount(html`<${Link} onActiveChange=${onActiveChange} to="/the-shire">Children<//>`, { window });
         await waitFor(() => onActiveChange.callCount > 0);
         expect(onActiveChange).to.have.been.calledWith(true);
       });
@@ -89,7 +84,8 @@ describe('<Link>', () => {
       describe('when link transitions to inactive', () => {
         it('is called again with false', async () => {
           const onActiveChange = fake();
-          const { router } = mount(html`<${Link} onActiveChange=${onActiveChange} to="/the-shire">Children<//>`, { window: mockWindow({ location: mockLocation({ pathname: '/the-shire' }) }) });
+          const window = mockWindow({ location: mockLocation({ pathname: '/the-shire' }) });
+          const { router } = mount(html`<${Link} onActiveChange=${onActiveChange} to="/the-shire">Children<//>`, { window });
           await waitFor(() => onActiveChange.callCount > 0);
           router.navigate('/mordor');
           await waitFor(() => onActiveChange.callCount > 1);

@@ -86,15 +86,11 @@ export const Link = (props) => {
   const [isActive, setActive] = useState(Boolean(router.match(props.to)));
 
   useEffect(router.onNavigate(() => {
-    const willBeActive = Boolean(router.match(props.to));
-
-    if (willBeActive !== isActive) {
-      setActive(willBeActive);
-    }
-  }), [router, props.to]);
+    setActive(!isActive);
+  }), [Boolean(router.match(props.to))]);
 
   useEffect(() => {
-    if (props.onActiveChange) {
+    if (typeof props.onActiveChange === 'function') {
       props.onActiveChange(isActive);
     }
   }, [isActive, props.onActiveChange]);
@@ -104,11 +100,11 @@ export const Link = (props) => {
     router.navigate(props.to);
   };
 
-  const childProps = { ...props };
+  const childProps = { ...props, href: props.to, onClick };
 
   delete childProps.to;
 
-  return html`<a ...${childProps} href=${props.to} onClick=${onClick}/>`;
+  return html`<a ...${childProps}/>`;
 };
 
 const shallowEquals = (a, b) => Boolean(a) === Boolean(b) && (!(a && b) || Object.keys(a).concat(Object.keys(b)).every((key) => a[key] === b[key]));
