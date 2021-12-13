@@ -83,11 +83,12 @@ export const pattern = (templateParts, ...parameterNames) => function patternMat
 
 export const Link = (props) => {
   const router = useContext(Router);
-  const [isActive, setActive] = useState(Boolean(router.match(props.to)));
+  const checkActive = () => Boolean(router.match(props.to));
+  const [isActive, setActive] = useState(checkActive());
 
   useEffect(router.onNavigate(() => {
-    setActive(!isActive);
-  }), [Boolean(router.match(props.to))]);
+    setActive(checkActive());
+  }), [checkActive()]);
 
   useEffect(() => {
     if (typeof props.onActiveChange === 'function') {
