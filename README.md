@@ -6,6 +6,7 @@
 [![Current Release Version][version]][npm]
 ![Weekly Downloads][downloads]
 [![Sponsors][sponsors]][become-a-sponsor]
+[![Known Vulnerabilities][vulnerabilities-badge]][vulnerabilities]
 
 A tiny router for Preact apps. It connects your app with the address bar. That's it.
 
@@ -106,3 +107,5 @@ const App = () => <Router.Provider value={myRouter}>
 [become-a-sponsor]: https://github.com/sponsors/canterberry
 [npm]: https://npmjs.com/package/router-preact
 [bundlephobia]: https://bundlephobia.com/package/router-preact
+[vulnerabilities-badge]: https://snyk.io/test/npm/router-preact/badge.svg
+[vulnerabilities]: https://snyk.io/test/npm/router-preact
