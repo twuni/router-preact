@@ -64,6 +64,18 @@ const App = () => <>
 </>;
 ```
 
+### Example: Redirection
+
+```jsx
+import { Redirect, Route } from 'router-preact';
+
+const App = () => <>
+  <Route path="/">
+    <Redirect to="/pages/1"/>
+  </Route>
+</>;
+```
+
 ### Advanced Example: Intercepting the Router
 
 If you really want to, you can swap out the router implementation by

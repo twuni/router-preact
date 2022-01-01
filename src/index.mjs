@@ -110,6 +110,18 @@ export const Link = (props) => {
 
 const shallowEquals = (a, b) => Boolean(a) === Boolean(b) && (!(a && b) || Object.keys(a).concat(Object.keys(b)).every((key) => a[key] === b[key]));
 
+export const Redirect = ({ to }) => {
+  const { navigate } = useContext(Router);
+
+  useEffect(() => {
+    if (to) {
+      navigate(to);
+    }
+  }, [to]);
+
+  return null;
+};
+
 export const Route = ({ children, path = '/', render }) => {
   const router = useContext(Router);
   const [params, setParams] = useState(router.match(path));

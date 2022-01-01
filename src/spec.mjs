@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 
-import { BrowserRouter, Link, Route, Router, browserRouter, navigate, onNavigate, pattern } from './index.mjs';
+import { BrowserRouter, Link, Redirect, Route, Router, browserRouter, navigate, onNavigate, pattern } from './index.mjs';
 import { delay, mount, waitFor } from './spec.utils.mjs';
 import { describe, it } from 'mocha';
 import { mockLocation, mockWindow } from './spec.mocks.mjs';
@@ -101,6 +101,29 @@ describe('<Link>', () => {
       const { container } = mount(html`<${Link} to="/the-shire">Go home, Sam.<//>`, { router });
       container.querySelector('a').click();
       expect(router.navigate).to.have.been.calledWith('/the-shire');
+    });
+  });
+});
+
+describe('<Redirect>', () => {
+  it('is a function', () => {
+    expect(Redirect).to.be.a('function');
+  });
+
+  describe('when given a "to" prop', () => {
+    it('triggers a router navigation', async () => {
+      const router = { ...new BrowserRouter(mockWindow()), navigate: fake() };
+      mount(html`<${Redirect} to="/the-shire"/>`, { router });
+      await waitFor(() => router.navigate.callCount);
+      expect(router.navigate).to.have.been.calledWith('/the-shire');
+    });
+  });
+
+  describe('when not given a "to" prop', () => {
+    it('does not trigger a router navigation', () => {
+      const router = { ...new BrowserRouter(mockWindow()), navigate: fake() };
+      mount(html`<${Redirect}/>`, { router });
+      expect(router.navigate).not.to.have.been.called;
     });
   });
 });
