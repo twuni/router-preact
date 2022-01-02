@@ -1,6 +1,6 @@
 {
   "name": "router-preact",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Tiny router for Preact apps.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.mjs",
